@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Mentions</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="intro">View Twitter Mentions for</string>
+    <string name="hint">Username</string>
+    <string name="placeholder">---</string>
+
+</resources>
