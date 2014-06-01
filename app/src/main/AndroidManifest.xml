@@ -19,9 +19,12 @@
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.DEFAULT" />
             <category android:name="android.intent.category.BROWSABLE" />
-            <data android:scheme="x-oauthflow-twitter" android:host="twitterlogin"/>
+            <data android:scheme="oauth" android:host="Mentions_app:///"/>
         </intent-filter>
+
     </application>
+    <uses-sdk android:minSdkVersion="9" />
+
     <!-- Permission - Internet Connect -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Network State Permissions -->

@@ -9,6 +9,24 @@
     android:background="#C0DEED"
     tools:context="com.app.test.mentions.mentions.SearchActivity">
 
+    <!-- Twitter Login Button -->
+    <ImageButton android:id="@+id/btnLoginTwitter"
+        android:src="@drawable/sign_in"
+        android:background="@drawable/sign_in"
+        android:contentDescription="@string/login"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dip"
+      />
+
+    <!-- user name label -->
+    <TextView android:id="@+id/lblUserName"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dip"
+        android:layout_marginTop="30dip"/>
+
     <TextView
         android:id="@+id/intro_txt"
         android:layout_width="wrap_content"
@@ -18,6 +36,7 @@
         android:text="@string/intro"
         android:textSize="20dp"
         android:paddingTop="20dp"
+        android:visibility="gone"
         />
 
     <EditText
@@ -31,6 +50,7 @@
         android:padding="10dp"
         android:background="#FFF"
         android:layout_margin="10dp"
+        android:visibility="gone"
         />
 
     <ImageButton
@@ -45,6 +65,7 @@
         android:layout_alignEnd="@+id/search_edit"
         android:layout_margin="6dp"
         android:onClick="searchTwitter"
+        android:visibility="gone"
         />
 
     <ScrollView
@@ -53,6 +74,7 @@
         android:layout_height="fill_parent"
         android:layout_below="@+id/search_btn"
         android:paddingTop="10dp"
+        android:visibility="gone"
         >
 
 
@@ -66,8 +88,18 @@
             android:layout_margin="5dp"
             android:text="@string/placeholder"
             android:freezesText="true"
+            android:visibility="gone"
             />
-
     </ScrollView>
+
+    <!-- Twitter Logout button -->
+    <Button android:id="@+id/btnLogoutTwitter"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Logout from Twitter"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:layout_marginTop="50dip"
+        android:visibility="gone"/>
 
 </RelativeLayout>
