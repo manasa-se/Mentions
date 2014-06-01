@@ -9,7 +9,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ScrollView;
 import android.widget.TextView;
+
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
@@ -18,7 +20,6 @@ import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -35,12 +36,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 public class SearchActivity extends Activity {
 
     private TextView mentionsDisplay;
 
-    // Constants
     static String TWITTER_CONSUMER_KEY = "ifL1xEZfZSyOj0ADsR8JnJrQr";
     static String TWITTER_CONSUMER_SECRET = "h9rDY3bqsHdmWhUnIdzsWBT3W2ay49mN392DR6upgUu1JqdnKU";
 
@@ -50,7 +49,7 @@ public class SearchActivity extends Activity {
     static final String PREF_KEY_OAUTH_SECRET = "oauth_token_secret";
     static final String PREF_KEY_TWITTER_LOGIN = "isTwitterLogedIn";
 
-    static final String TWITTER_CALLBACK_URL = "Mentions_app:///";
+    static final String TWITTER_CALLBACK_URL = "oauth://t4jsample";
 
     // Twitter oauth urls
     static final String URL_TWITTER_AUTH = "auth_url";
@@ -60,17 +59,20 @@ public class SearchActivity extends Activity {
     // Login button
     ImageButton btnLoginTwitter;
     // Update status button
-    Button btnUpdateStatus;
     // Logout button
     Button btnLogoutTwitter;
     // EditText for update
-    EditText txtUpdate;
-    // lbl update
-    TextView lblUpdate;
     TextView lblUserName;
+
+    ImageButton btnSearch;
+    TextView lblIntro;
+    EditText inpSearch;
+    ScrollView resultsScroll;
 
     // Progress dialog
     ProgressDialog pDialog;
+
+    String username;
 
     // Twitter
     private static Twitter twitter;
@@ -85,16 +87,29 @@ public class SearchActivity extends Activity {
     // Alert Dialog Manager
     AlertDialogManager alert = new AlertDialogManager();
 
+    static{
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+    }
+
+    private static final int TWITTER_LOGIN_REQUEST_CODE = 1;
+
+    private void setupUIElements() {
+        mentionsDisplay = (TextView)findViewById(R.id.tweet_txt);
+        btnSearch = (ImageButton) findViewById(R.id.search_btn) ;
+        lblIntro = (TextView) findViewById(R.id.intro_txt);
+        inpSearch = (EditText) findViewById(R.id.search_edit);
+        resultsScroll = (ScrollView) findViewById(R.id.scroll_view);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-
+        setupUIElements();
         cd = new ConnectionDetector(getApplicationContext());
+
 
         // Check if Internet present
         if (!cd.isConnectingToInternet()) {
@@ -122,15 +137,13 @@ public class SearchActivity extends Activity {
         mSharedPreferences = getApplicationContext().getSharedPreferences(
                 "MyPref", 0);
 
-        /**
-         * Twitter login button click event will call loginToTwitter() function
-         * */
         btnLoginTwitter.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View arg0) {
                 // Call login twitter function
-                loginToTwitter();
+               loginToTwitter();
+
             }
         });
 
@@ -150,6 +163,7 @@ public class SearchActivity extends Activity {
                     AccessToken accessToken = twitter.getOAuthAccessToken(
                             requestToken, verifier);
 
+
                     // Shared Preferences
                     Editor e = mSharedPreferences.edit();
 
@@ -163,33 +177,17 @@ public class SearchActivity extends Activity {
                     e.commit(); // save changes
 
                     Log.e("Twitter OAuth Token", "> " + accessToken.getToken());
-
-                    // Hide login button
-                    btnLoginTwitter.setVisibility(View.GONE);
-
-                    // Show Update Twitter
-                    lblUpdate.setVisibility(View.VISIBLE);
-                    txtUpdate.setVisibility(View.VISIBLE);
-                    btnUpdateStatus.setVisibility(View.VISIBLE);
-                    btnLogoutTwitter.setVisibility(View.VISIBLE);
-
-                    // Getting user details from twitter
-                    // For now i am getting his name only
                     long userID = accessToken.getUserId();
                     User user = twitter.showUser(userID);
-                    String username = user.getName();
+                    username = user.getName();
 
-                    // Displaying in xml ui
-                    lblUserName.setText(Html.fromHtml("<b>Welcome " + username + "</b>"));
+                    setupSearchDisplay();
                 } catch (Exception e) {
                     // Check log for login errors
                     Log.e("Twitter Login Error", "> " + e.getMessage());
                 }
             }
         }
-        /**
-         * Button click event for logout from twitter
-         * */
         btnLogoutTwitter.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -198,30 +196,24 @@ public class SearchActivity extends Activity {
                 logoutFromTwitter();
             }
         });
-
-        mentionsDisplay = (TextView)findViewById(R.id.tweet_txt);
     }
 
-    private void logoutFromTwitter() {
-        // Clear the shared preferences
-        Editor e = mSharedPreferences.edit();
-        e.remove(PREF_KEY_OAUTH_TOKEN);
-        e.remove(PREF_KEY_OAUTH_SECRET);
-        e.remove(PREF_KEY_TWITTER_LOGIN);
-        e.commit();
+    private void setupSearchDisplay() {
+        // Hide login button
+        btnLoginTwitter.setVisibility(View.GONE);
 
-        // After this take the appropriate action
-        // I am showing the hiding/showing buttons again
-        // You might not needed this code
-        btnLogoutTwitter.setVisibility(View.GONE);
-        btnUpdateStatus.setVisibility(View.GONE);
-        txtUpdate.setVisibility(View.GONE);
-        lblUpdate.setVisibility(View.GONE);
-        lblUserName.setText("");
-        lblUserName.setVisibility(View.GONE);
+        // Show Update Twitter
+        mentionsDisplay.setVisibility(View.VISIBLE);
+        btnLogoutTwitter.setVisibility(View.VISIBLE);
+        btnSearch.setVisibility(View.VISIBLE);
+        inpSearch.setVisibility(View.VISIBLE);
+        lblIntro.setVisibility(View.VISIBLE);
+        resultsScroll.setVisibility(View.VISIBLE);
 
-        btnLoginTwitter.setVisibility(View.VISIBLE);
+        // Displaying in xml ui
+        lblUserName.setText(Html.fromHtml("<b>Welcome " + username + "</b>"));
     }
+
 
     private void loginToTwitter() {
         // Check if already logged in
@@ -230,6 +222,13 @@ public class SearchActivity extends Activity {
             builder.setOAuthConsumerKey(TWITTER_CONSUMER_KEY);
             builder.setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET);
             Configuration configuration = builder.build();
+
+            ConfigurationBuilder cb = new ConfigurationBuilder();
+            cb.setDebugEnabled(true)
+                    .setOAuthConsumerKey("ifL1xEZfZSyOj0ADsR8JnJrQr")
+                    .setOAuthConsumerSecret("h9rDY3bqsHdmWhUnIdzsWBT3W2ay49mN392DR6upgUu1JqdnKU")
+                    .setOAuthAccessToken("2441115534-oVq2xHszFZlpWB95XKD1FWB6JrjOTmTlfHKMh4K")
+                    .setOAuthAccessTokenSecret("qDYBIYT5VfnkqHJXUZU8TARfTn7hGjMWKxmGHAPE5Q2J0");
 
             TwitterFactory factory = new TwitterFactory(configuration);
             twitter = factory.getInstance();
@@ -244,8 +243,10 @@ public class SearchActivity extends Activity {
             }
         } else {
             // user already logged into twitter
+
             Toast.makeText(getApplicationContext(),
                     "Already Logged into twitter", Toast.LENGTH_LONG).show();
+            setupSearchDisplay();
         }
     }
 
@@ -293,6 +294,24 @@ public class SearchActivity extends Activity {
         }
         else
             mentionsDisplay.setText("Enter a search query!");
+    }
+
+    private void logoutFromTwitter() {
+        // Clear the shared preferences
+        Editor e = mSharedPreferences.edit();
+        e.remove(PREF_KEY_OAUTH_TOKEN);
+        e.remove(PREF_KEY_OAUTH_SECRET);
+        e.remove(PREF_KEY_TWITTER_LOGIN);
+        e.commit();
+
+        // After this take the appropriate action
+        // I am showing the hiding/showing buttons again
+        // You might not needed this code
+        btnLogoutTwitter.setVisibility(View.GONE);
+        lblUserName.setText("");
+        lblUserName.setVisibility(View.GONE);
+
+        btnLoginTwitter.setVisibility(View.VISIBLE);
     }
 
 }

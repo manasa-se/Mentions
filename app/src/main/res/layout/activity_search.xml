@@ -11,24 +11,24 @@
 
     <!-- Twitter Login Button -->
     <ImageButton android:id="@+id/btnLoginTwitter"
-        android:src="@drawable/sign_in"
-        android:background="@drawable/sign_in"
-        android:contentDescription="@string/login"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:src="@drawable/sign_in"
+        android:background="@drawable/sign_in"
+        android:contentDescription="LoginButton"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="50dip"
-      />
+        android:layout_marginTop="50dip"/>
 
     <!-- user name label -->
     <TextView android:id="@+id/lblUserName"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:padding="10dip"
-        android:layout_marginTop="30dip"/>
+        android:layout_marginTop="10dip"/>
 
     <TextView
         android:id="@+id/intro_txt"
+        android:layout_below="@+id/lblUserName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
@@ -75,6 +75,7 @@
         android:layout_below="@+id/search_btn"
         android:paddingTop="10dp"
         android:visibility="gone"
+        android:id="@+id/scroll_view"
         >
 
 
@@ -90,16 +91,17 @@
             android:freezesText="true"
             android:visibility="gone"
             />
+
     </ScrollView>
 
-    <!-- Twitter Logout button -->
     <Button android:id="@+id/btnLogoutTwitter"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Logout from Twitter"
-        android:layout_marginLeft="10dip"
-        android:layout_marginRight="10dip"
-        android:layout_marginTop="50dip"
+         android:layout_alignParentBottom="true"
+        android:scaleX="0.5"
+        android:scaleY="0.5"
+        android:layout_centerHorizontal="true"
         android:visibility="gone"/>
 
 </RelativeLayout>
