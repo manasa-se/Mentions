@@ -20,7 +20,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -82,6 +81,10 @@ public class SearchActivity extends Activity {
 
     // Alert Dialog Manager
     AlertDialogManager alert = new AlertDialogManager();
+
+    static final String KEY_TWEET = "tweet";
+    static final String KEY_THUMB_URL = "thumb";
+    LazyAdapter adapter;
 
     //TODO change to Async thread
     static{
@@ -255,24 +258,48 @@ public class SearchActivity extends Activity {
                 }
                 Query query = new Query(searchTerm);
                 final QueryResult result = t.search(query);
-                final ArrayList results = new ArrayList();
+               // final ArrayList results = new ArrayList();
+                ArrayList<HashMap<String, String>> results = new ArrayList<HashMap<String, String>>();
 
                 for (Status status : result.getTweets()) {
-                    results.add("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n");
+                    HashMap<String, String> map = new HashMap<String, String>();
+                    map.put(KEY_TWEET, "@" + status.getUser().getScreenName() + ":" + status.getText());
+                    if (status.getMediaEntities().length > 0)
+                         map.put(KEY_THUMB_URL, status.getMediaEntities()[0].getMediaURL());
+                    else
+                        map.put(KEY_THUMB_URL,"");
+                    results.add(map);
+                   // results.add("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n");
                 }
                 resultsList.setVisibility(View.VISIBLE);
                 if(results.size()>0) {
-                    final StableArrayAdapter adapter = new StableArrayAdapter(this,
-                            android.R.layout.simple_list_item_1, results);
+                    adapter=new LazyAdapter(this, results);
                     resultsList.setAdapter(adapter);
 
+
+                    // Click event for single list row
                     resultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
                         @Override
-                        public void onItemClick(AdapterView<?> parent, final View view,
+                        public void onItemClick(AdapterView<?> parent, View view,
                                                 int position, long id) {
+
+
                         }
                     });
+
+
+//                    final StableArrayAdapter adapter = new StableArrayAdapter(this,
+//                            android.R.layout.simple_list_item_1, results);
+//                    resultsList.setAdapter(adapter);
+//
+//                    resultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//
+//                        @Override
+//                        public void onItemClick(AdapterView<?> parent, final View view,
+//                                                int position, long id) {
+//                        }
+//                    });
                 }
                 else {
                     Toast.makeText(getApplicationContext(),

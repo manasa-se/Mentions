@@ -7,8 +7,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="C:\Users\Manasa\AndroidStudioProjects\Mentions" />
-            <option value="C:\Users\Manasa\AndroidStudioProjects\Mentions\app" />
+            <option value="C:\Users\Manasa\AndroidStudioProjects\Mentions\Mentions" />
+            <option value="C:\Users\Manasa\AndroidStudioProjects\Mentions\Mentions\app" />
           </set>
         </option>
       </GradleProjectSettings>
