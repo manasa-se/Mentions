@@ -14,14 +14,17 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -50,7 +53,7 @@ public class SearchActivity extends Activity {
     static final String PREF_KEY_OAUTH_TOKEN = "oauth_token";
     static final String PREF_KEY_OAUTH_SECRET = "oauth_token_secret";
     static final String PREF_KEY_TWITTER_LOGIN = "isTwitterLogedIn";
-
+    static final String USERNAME = "USERNAME";
     static final String TWITTER_CALLBACK_URL = "oauth://t4jsample";
 
     // Twitter oauth urls
@@ -70,13 +73,12 @@ public class SearchActivity extends Activity {
     TextView lblIntro;
     EditText inpSearch;
     ScrollView resultsScroll;
+    ListView resultsList;
 
     // Progress dialog
     ProgressDialog pDialog;
 
-    String username;
-
-    // Twitter
+     // Twitter
     private static Twitter twitter;
     private static RequestToken requestToken;
 
@@ -102,6 +104,7 @@ public class SearchActivity extends Activity {
         lblIntro = (TextView) findViewById(R.id.intro_txt);
         inpSearch = (EditText) findViewById(R.id.search_edit);
         resultsScroll = (ScrollView) findViewById(R.id.scroll_view);
+        resultsList = (ListView) findViewById(R.id.listview);
     }
 
     @Override
@@ -165,6 +168,10 @@ public class SearchActivity extends Activity {
                     AccessToken accessToken = twitter.getOAuthAccessToken(
                             requestToken, verifier);
 
+                    Log.e("Twitter OAuth Token", "> " + accessToken.getToken());
+                    long userID = accessToken.getUserId();
+                    User user = twitter.showUser(userID);
+
 
                     // Shared Preferences
                     Editor e = mSharedPreferences.edit();
@@ -176,14 +183,10 @@ public class SearchActivity extends Activity {
                             accessToken.getTokenSecret());
                     // Store login status - true
                     e.putBoolean(PREF_KEY_TWITTER_LOGIN, true);
+                    e.putString(USERNAME,user.getName());
                     e.commit(); // save changes
 
-                    Log.e("Twitter OAuth Token", "> " + accessToken.getToken());
-                    long userID = accessToken.getUserId();
-                    User user = twitter.showUser(userID);
-                    username = user.getName();
-
-                    setupSearchDisplay();
+                      setupSearchDisplay();
                 } catch (Exception e) {
                     // Check log for login errors
                     Log.e("Twitter Login Error", "> " + e.getMessage());
@@ -205,15 +208,14 @@ public class SearchActivity extends Activity {
         btnLoginTwitter.setVisibility(View.GONE);
 
         // Show Update Twitter
-        mentionsDisplay.setVisibility(View.VISIBLE);
+      //  mentionsDisplay.setVisibility(View.VISIBLE);
         btnLogoutTwitter.setVisibility(View.VISIBLE);
         btnSearch.setVisibility(View.VISIBLE);
         inpSearch.setVisibility(View.VISIBLE);
         lblIntro.setVisibility(View.VISIBLE);
-        resultsScroll.setVisibility(View.VISIBLE);
 
         // Displaying in xml ui
-        lblUserName.setText(Html.fromHtml("<b>Welcome " + username + "</b>"));
+        lblUserName.setText(Html.fromHtml("<b>Welcome " + mSharedPreferences.getString(USERNAME, "User") + "</b>"));
     }
 
 
@@ -223,9 +225,7 @@ public class SearchActivity extends Activity {
             ConfigurationBuilder cb = new ConfigurationBuilder();
             cb.setDebugEnabled(true)
                     .setOAuthConsumerKey(TWITTER_CONSUMER_KEY)
-                    .setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET)
-                    .setOAuthAccessToken(TWITTER_ACCESS_KEY)
-                    .setOAuthAccessTokenSecret(TWITTER_ACCESS_SECRET);
+                    .setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET);
 
             TwitterFactory factory = new TwitterFactory(cb.build());
             twitter = factory.getInstance();
@@ -296,13 +296,41 @@ public class SearchActivity extends Activity {
                     searchTerm = "@" + searchTerm;
                 }
                 Query query = new Query(searchTerm);
-                QueryResult result = t.search(query);
-                StringBuilder searchResults = new StringBuilder();
+                final QueryResult result = t.search(query);
+             //   StringBuilder searchResults = new StringBuilder();
+                final ArrayList results = new ArrayList();
+
                 for (Status status : result.getTweets()) {
-                    searchResults.append("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n---------------------------------------------------------------\n");
+                    results.add("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n");
                 }
-                if(searchResults.length()>0)
-                    mentionsDisplay.setText(searchResults.toString());
+               // resultsScroll.setVisibility(View.VISIBLE);
+                resultsList.setVisibility(View.VISIBLE);
+                if(results.size()>0) {
+                    final StableArrayAdapter adapter = new StableArrayAdapter(this,
+                            android.R.layout.simple_list_item_1, results);
+                    resultsList.setAdapter(adapter);
+
+                    resultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, final View view,
+                                                int position, long id) {
+                            final String item = (String) parent.getItemAtPosition(position);
+                            view.animate().setDuration(2000).alpha(0)
+                                    .withEndAction(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            results.remove(item);
+                                            adapter.notifyDataSetChanged();
+                                            view.setAlpha(1);
+                                        }
+                                    });
+                        }
+
+                    });
+                }
+                  //  mentionsDisplay.setText(searchResults.toString());
+
                 else
                     mentionsDisplay.setText("Sorry - no mentions found for your search!");
             }
@@ -321,6 +349,7 @@ public class SearchActivity extends Activity {
         e.remove(PREF_KEY_OAUTH_TOKEN);
         e.remove(PREF_KEY_OAUTH_SECRET);
         e.remove(PREF_KEY_TWITTER_LOGIN);
+        e.remove(USERNAME);
         e.commit();
 
         // After this take the appropriate action
@@ -329,6 +358,9 @@ public class SearchActivity extends Activity {
         btnLogoutTwitter.setVisibility(View.GONE);
         lblUserName.setText("");
         lblUserName.setVisibility(View.GONE);
+        btnSearch.setVisibility(View.GONE);
+        inpSearch.setVisibility(View.GONE);
+        lblIntro.setVisibility(View.GONE);
 
         btnLoginTwitter.setVisibility(View.VISIBLE);
     }
@@ -354,6 +386,8 @@ public class SearchActivity extends Activity {
         public boolean hasStableIds() {
             return true;
         }
+
+
 
     }
 
