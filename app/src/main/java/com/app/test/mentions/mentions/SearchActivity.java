@@ -1,15 +1,29 @@
 package com.app.test.mentions.mentions;
 
 import android.app.Activity;
-import android.os.StrictMode;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.StrictMode;
+import android.text.Html;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import java.util.HashMap;
+import java.util.List;
 
 import twitter4j.Query;
 import twitter4j.QueryResult;
@@ -20,23 +34,7 @@ import twitter4j.TwitterFactory;
 import twitter4j.User;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
-import twitter4j.conf.Configuration;
 import twitter4j.conf.ConfigurationBuilder;
-import android.app.ProgressDialog;
-import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.content.pm.ActivityInfo;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.text.Html;
-import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
 
 public class SearchActivity extends Activity {
 
@@ -301,7 +299,7 @@ public class SearchActivity extends Activity {
                 QueryResult result = t.search(query);
                 StringBuilder searchResults = new StringBuilder();
                 for (Status status : result.getTweets()) {
-                    searchResults.append("@" + status.getUser().getScreenName() + ":" + status.getText()+"----------------------------------------\n\n");
+                    searchResults.append("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n---------------------------------------------------------------\n");
                 }
                 if(searchResults.length()>0)
                     mentionsDisplay.setText(searchResults.toString());
@@ -334,5 +332,31 @@ public class SearchActivity extends Activity {
 
         btnLoginTwitter.setVisibility(View.VISIBLE);
     }
+
+    private class StableArrayAdapter extends ArrayAdapter<String> {
+
+        HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
+
+        public StableArrayAdapter(Context context, int textViewResourceId,
+                                  List<String> objects) {
+            super(context, textViewResourceId, objects);
+            for (int i = 0; i < objects.size(); ++i) {
+                mIdMap.put(objects.get(i), i);
+            }
+        }
+
+        @Override
+        public long getItemId(int position) {
+            String item = getItem(position);
+            return mIdMap.get(item);
+        }
+        @Override
+        public boolean hasStableIds() {
+            return true;
+        }
+
+    }
+
+
 
 }
