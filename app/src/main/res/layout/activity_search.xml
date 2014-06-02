@@ -98,10 +98,9 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="Logout from Twitter"
-         android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
         android:scaleX="0.5"
         android:scaleY="0.5"
-        android:layout_centerHorizontal="true"
         android:visibility="gone"/>
 
 </RelativeLayout>

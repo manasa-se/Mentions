@@ -2,7 +2,6 @@ package com.app.test.mentions.mentions;
 
 import android.app.Activity;
 import android.os.StrictMode;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,6 +11,9 @@ import android.widget.ImageButton;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import twitter4j.Query;
+import twitter4j.QueryResult;
+import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
@@ -42,6 +44,8 @@ public class SearchActivity extends Activity {
 
     static String TWITTER_CONSUMER_KEY = "ifL1xEZfZSyOj0ADsR8JnJrQr";
     static String TWITTER_CONSUMER_SECRET = "h9rDY3bqsHdmWhUnIdzsWBT3W2ay49mN392DR6upgUu1JqdnKU";
+    static String TWITTER_ACCESS_KEY = "2441115534-oVq2xHszFZlpWB95XKD1FWB6JrjOTmTlfHKMh4K";
+    static String TWITTER_ACCESS_SECRET = "qDYBIYT5VfnkqHJXUZU8TARfTn7hGjMWKxmGHAPE5Q2J0";
 
     // Preference Constants
     static String PREFERENCE_NAME = "twitter_oauth";
@@ -218,19 +222,14 @@ public class SearchActivity extends Activity {
     private void loginToTwitter() {
         // Check if already logged in
         if (!isTwitterLoggedInAlready()) {
-            ConfigurationBuilder builder = new ConfigurationBuilder();
-            builder.setOAuthConsumerKey(TWITTER_CONSUMER_KEY);
-            builder.setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET);
-            Configuration configuration = builder.build();
-
             ConfigurationBuilder cb = new ConfigurationBuilder();
             cb.setDebugEnabled(true)
-                    .setOAuthConsumerKey("ifL1xEZfZSyOj0ADsR8JnJrQr")
-                    .setOAuthConsumerSecret("h9rDY3bqsHdmWhUnIdzsWBT3W2ay49mN392DR6upgUu1JqdnKU")
-                    .setOAuthAccessToken("2441115534-oVq2xHszFZlpWB95XKD1FWB6JrjOTmTlfHKMh4K")
-                    .setOAuthAccessTokenSecret("qDYBIYT5VfnkqHJXUZU8TARfTn7hGjMWKxmGHAPE5Q2J0");
+                    .setOAuthConsumerKey(TWITTER_CONSUMER_KEY)
+                    .setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET)
+                    .setOAuthAccessToken(TWITTER_ACCESS_KEY)
+                    .setOAuthAccessTokenSecret(TWITTER_ACCESS_SECRET);
 
-            TwitterFactory factory = new TwitterFactory(configuration);
+            TwitterFactory factory = new TwitterFactory(cb.build());
             twitter = factory.getInstance();
 
             try {
@@ -286,6 +285,28 @@ public class SearchActivity extends Activity {
         if(searchTerm.length()>0){
             try{
 
+                ConfigurationBuilder cb = new ConfigurationBuilder();
+                cb.setDebugEnabled(true)
+                        .setOAuthConsumerKey(TWITTER_CONSUMER_KEY)
+                        .setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET)
+                        .setOAuthAccessToken(TWITTER_ACCESS_KEY)
+                        .setOAuthAccessTokenSecret(TWITTER_ACCESS_SECRET);
+
+                TwitterFactory factory = new TwitterFactory(cb.build());
+                Twitter t = factory.getInstance();
+                if(!searchTerm.startsWith("@")) {
+                    searchTerm = "@" + searchTerm;
+                }
+                Query query = new Query(searchTerm);
+                QueryResult result = t.search(query);
+                StringBuilder searchResults = new StringBuilder();
+                for (Status status : result.getTweets()) {
+                    searchResults.append("@" + status.getUser().getScreenName() + ":" + status.getText()+"----------------------------------------\n\n");
+                }
+                if(searchResults.length()>0)
+                    mentionsDisplay.setText(searchResults.toString());
+                else
+                    mentionsDisplay.setText("Sorry - no mentions found for your search!");
             }
             catch(Exception e){
                 mentionsDisplay.setText("Whoops - something went wrong!");
