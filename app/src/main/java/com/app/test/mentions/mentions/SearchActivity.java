@@ -41,8 +41,6 @@ import twitter4j.conf.ConfigurationBuilder;
 
 public class SearchActivity extends Activity {
 
-    private TextView mentionsDisplay;
-
     static String TWITTER_CONSUMER_KEY = "ifL1xEZfZSyOj0ADsR8JnJrQr";
     static String TWITTER_CONSUMER_SECRET = "h9rDY3bqsHdmWhUnIdzsWBT3W2ay49mN392DR6upgUu1JqdnKU";
     static String TWITTER_ACCESS_KEY = "2441115534-oVq2xHszFZlpWB95XKD1FWB6JrjOTmTlfHKMh4K";
@@ -61,18 +59,12 @@ public class SearchActivity extends Activity {
     static final String URL_TWITTER_OAUTH_VERIFIER = "oauth_verifier";
     static final String URL_TWITTER_OAUTH_TOKEN = "oauth_token";
 
-    // Login button
     ImageButton btnLoginTwitter;
-    // Update status button
-    // Logout button
     Button btnLogoutTwitter;
-    // EditText for update
     TextView lblUserName;
-
     ImageButton btnSearch;
     TextView lblIntro;
     EditText inpSearch;
-    ScrollView resultsScroll;
     ListView resultsList;
 
     // Progress dialog
@@ -91,6 +83,7 @@ public class SearchActivity extends Activity {
     // Alert Dialog Manager
     AlertDialogManager alert = new AlertDialogManager();
 
+    //TODO change to Async thread
     static{
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
@@ -99,11 +92,9 @@ public class SearchActivity extends Activity {
     private static final int TWITTER_LOGIN_REQUEST_CODE = 1;
 
     private void setupUIElements() {
-        mentionsDisplay = (TextView)findViewById(R.id.tweet_txt);
         btnSearch = (ImageButton) findViewById(R.id.search_btn) ;
         lblIntro = (TextView) findViewById(R.id.intro_txt);
         inpSearch = (EditText) findViewById(R.id.search_edit);
-        resultsScroll = (ScrollView) findViewById(R.id.scroll_view);
         resultsList = (ListView) findViewById(R.id.listview);
     }
 
@@ -111,18 +102,15 @@ public class SearchActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
-
         setupUIElements();
         cd = new ConnectionDetector(getApplicationContext());
-
 
         // Check if Internet present
         if (!cd.isConnectingToInternet()) {
             // Internet Connection is not present
             alert.showAlertDialog(SearchActivity.this, "Internet Connection Error",
                     "Please connect to working Internet connection", false);
-            // stop executing code by return
-            return;
+             return;
         }
 
         // Check if twitter keys are set
@@ -172,7 +160,6 @@ public class SearchActivity extends Activity {
                     long userID = accessToken.getUserId();
                     User user = twitter.showUser(userID);
 
-
                     // Shared Preferences
                     Editor e = mSharedPreferences.edit();
 
@@ -194,7 +181,6 @@ public class SearchActivity extends Activity {
             }
         }
         btnLogoutTwitter.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View arg0) {
                 // Call logout twitter function
@@ -204,17 +190,11 @@ public class SearchActivity extends Activity {
     }
 
     private void setupSearchDisplay() {
-        // Hide login button
         btnLoginTwitter.setVisibility(View.GONE);
-
-        // Show Update Twitter
-      //  mentionsDisplay.setVisibility(View.VISIBLE);
         btnLogoutTwitter.setVisibility(View.VISIBLE);
         btnSearch.setVisibility(View.VISIBLE);
         inpSearch.setVisibility(View.VISIBLE);
         lblIntro.setVisibility(View.VISIBLE);
-
-        // Displaying in xml ui
         lblUserName.setText(Html.fromHtml("<b>Welcome " + mSharedPreferences.getString(USERNAME, "User") + "</b>"));
     }
 
@@ -256,10 +236,84 @@ public class SearchActivity extends Activity {
         return mSharedPreferences.getBoolean(PREF_KEY_TWITTER_LOGIN, false);
     }
 
+    public void searchTwitter(View view){
+        EditText searchTxt = (EditText)findViewById(R.id.search_edit);
+        String searchTerm = searchTxt.getText().toString();
+        if(searchTerm.length()>0){
+            try{
+                ConfigurationBuilder cb = new ConfigurationBuilder();
+                cb.setDebugEnabled(true)
+                        .setOAuthConsumerKey(TWITTER_CONSUMER_KEY)
+                        .setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET)
+                        .setOAuthAccessToken(TWITTER_ACCESS_KEY)
+                        .setOAuthAccessTokenSecret(TWITTER_ACCESS_SECRET);
+
+                TwitterFactory factory = new TwitterFactory(cb.build());
+                Twitter t = factory.getInstance();
+                if(!searchTerm.startsWith("@")) {
+                    searchTerm = "@" + searchTerm;
+                }
+                Query query = new Query(searchTerm);
+                final QueryResult result = t.search(query);
+                final ArrayList results = new ArrayList();
+
+                for (Status status : result.getTweets()) {
+                    results.add("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n");
+                }
+                resultsList.setVisibility(View.VISIBLE);
+                if(results.size()>0) {
+                    final StableArrayAdapter adapter = new StableArrayAdapter(this,
+                            android.R.layout.simple_list_item_1, results);
+                    resultsList.setAdapter(adapter);
+
+                    resultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, final View view,
+                                                int position, long id) {
+                        }
+                    });
+                }
+                else {
+                    Toast.makeText(getApplicationContext(),
+                            "No mentions found for this username", Toast.LENGTH_LONG).show();
+                }
+            }
+            catch(Exception e){
+                Toast.makeText(getApplicationContext(),
+                        "Whoops - something went wrong!", Toast.LENGTH_LONG).show();
+                e.printStackTrace();
+            }
+        }
+        else
+            Toast.makeText(getApplicationContext(),
+                    "Enter a search query!", Toast.LENGTH_LONG).show();
+    }
+
+    private void logoutFromTwitter() {
+        // Clear the shared preferences
+        Editor e = mSharedPreferences.edit();
+        e.remove(PREF_KEY_OAUTH_TOKEN);
+        e.remove(PREF_KEY_OAUTH_SECRET);
+        e.remove(PREF_KEY_TWITTER_LOGIN);
+        e.remove(USERNAME);
+        e.commit();
+
+        // After this take the appropriate action
+        // I am showing the hiding/showing buttons again
+
+        btnLogoutTwitter.setVisibility(View.GONE);
+        lblUserName.setText("");
+        lblUserName.setVisibility(View.GONE);
+        btnSearch.setVisibility(View.GONE);
+        inpSearch.setVisibility(View.GONE);
+        lblIntro.setVisibility(View.GONE);
+        btnLoginTwitter.setVisibility(View.VISIBLE);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        
+
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.search, menu);
         return true;
@@ -275,94 +329,6 @@ public class SearchActivity extends Activity {
             return true;
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    public void searchTwitter(View view){
-        EditText searchTxt = (EditText)findViewById(R.id.search_edit);
-        String searchTerm = searchTxt.getText().toString();
-        if(searchTerm.length()>0){
-            try{
-
-                ConfigurationBuilder cb = new ConfigurationBuilder();
-                cb.setDebugEnabled(true)
-                        .setOAuthConsumerKey(TWITTER_CONSUMER_KEY)
-                        .setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET)
-                        .setOAuthAccessToken(TWITTER_ACCESS_KEY)
-                        .setOAuthAccessTokenSecret(TWITTER_ACCESS_SECRET);
-
-                TwitterFactory factory = new TwitterFactory(cb.build());
-                Twitter t = factory.getInstance();
-                if(!searchTerm.startsWith("@")) {
-                    searchTerm = "@" + searchTerm;
-                }
-                Query query = new Query(searchTerm);
-                final QueryResult result = t.search(query);
-             //   StringBuilder searchResults = new StringBuilder();
-                final ArrayList results = new ArrayList();
-
-                for (Status status : result.getTweets()) {
-                    results.add("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n");
-                }
-               // resultsScroll.setVisibility(View.VISIBLE);
-                resultsList.setVisibility(View.VISIBLE);
-                if(results.size()>0) {
-                    final StableArrayAdapter adapter = new StableArrayAdapter(this,
-                            android.R.layout.simple_list_item_1, results);
-                    resultsList.setAdapter(adapter);
-
-                    resultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-
-                        @Override
-                        public void onItemClick(AdapterView<?> parent, final View view,
-                                                int position, long id) {
-                            final String item = (String) parent.getItemAtPosition(position);
-                            view.animate().setDuration(2000).alpha(0)
-                                    .withEndAction(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            results.remove(item);
-                                            adapter.notifyDataSetChanged();
-                                            view.setAlpha(1);
-                                        }
-                                    });
-                        }
-
-                    });
-                }
-                  //  mentionsDisplay.setText(searchResults.toString());
-
-                else
-                    mentionsDisplay.setText("Sorry - no mentions found for your search!");
-            }
-            catch(Exception e){
-                mentionsDisplay.setText("Whoops - something went wrong!");
-                e.printStackTrace();
-            }
-        }
-        else
-            mentionsDisplay.setText("Enter a search query!");
-    }
-
-    private void logoutFromTwitter() {
-        // Clear the shared preferences
-        Editor e = mSharedPreferences.edit();
-        e.remove(PREF_KEY_OAUTH_TOKEN);
-        e.remove(PREF_KEY_OAUTH_SECRET);
-        e.remove(PREF_KEY_TWITTER_LOGIN);
-        e.remove(USERNAME);
-        e.commit();
-
-        // After this take the appropriate action
-        // I am showing the hiding/showing buttons again
-        // You might not needed this code
-        btnLogoutTwitter.setVisibility(View.GONE);
-        lblUserName.setText("");
-        lblUserName.setVisibility(View.GONE);
-        btnSearch.setVisibility(View.GONE);
-        inpSearch.setVisibility(View.GONE);
-        lblIntro.setVisibility(View.GONE);
-
-        btnLoginTwitter.setVisibility(View.VISIBLE);
     }
 
     private class StableArrayAdapter extends ArrayAdapter<String> {

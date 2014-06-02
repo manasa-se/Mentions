@@ -70,6 +70,8 @@
 
     <ListView xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/listview"
+        android:divider="#b5b5b5"
+        android:dividerHeight="1dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/search_btn"
@@ -77,32 +79,6 @@
         android:background="#FFF"
         android:visibility="gone"
     />
-
-    <ScrollView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_below="@+id/search_btn"
-        android:paddingTop="10dp"
-        android:visibility="gone"
-        android:id="@+id/scroll_view"
-        >
-
-
-        <TextView
-            android:id="@+id/tweet_txt"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|center"
-            android:padding="10dp"
-            android:background="#FFF"
-            android:layout_margin="5dp"
-            android:text="@string/placeholder"
-            android:freezesText="true"
-            android:visibility="gone"
-            />
-
-    </ScrollView>
 
     <Button android:id="@+id/btnLogoutTwitter"
         android:layout_width="fill_parent"
