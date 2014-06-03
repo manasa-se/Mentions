@@ -1,13 +1,19 @@
 package com.app.test.mentions.mentions;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.StrictMode;
 import android.text.Html;
 import android.util.Log;
@@ -23,6 +29,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -259,7 +269,7 @@ public class SearchActivity extends Activity {
                 Query query = new Query(searchTerm);
                 final QueryResult result = t.search(query);
                // final ArrayList results = new ArrayList();
-                ArrayList<HashMap<String, String>> results = new ArrayList<HashMap<String, String>>();
+                final ArrayList<HashMap<String, String>> results = new ArrayList<HashMap<String, String>>();
 
                 for (Status status : result.getTweets()) {
                     HashMap<String, String> map = new HashMap<String, String>();
@@ -281,25 +291,92 @@ public class SearchActivity extends Activity {
                     resultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
                         @Override
-                        public void onItemClick(AdapterView<?> parent, View view,
-                                                int position, long id) {
+                        public void onItemClick(AdapterView<?> parent,final View view,
+                                                final int position, long id) {
 
 
+                            AlertDialog.Builder builder = new AlertDialog.Builder(SearchActivity.this);
+                            builder.setMessage("Would you like to save the image to your SD card ?");
+                            // Add the buttons
+                            builder.setPositiveButton("SD Card", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    // User clicked OK button
+                                    final String tweet = ((TextView) view.findViewById(R.id.title)).getText().toString();
+                                    URL url;
+                                    try {
+                                        url = new URL(results.get(position).get(KEY_THUMB_URL));
+                                        final Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+
+                                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                                        bmp.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+
+                                        File f = new File(Environment.getExternalStorageDirectory() + File.separator + "mention_" + System.currentTimeMillis() + ".jpg");
+                                        try {
+                                            f.createNewFile();
+                                            FileOutputStream fo = new FileOutputStream(f);
+                                            fo.write(bytes.toByteArray());
+                                            fo.close();
+                                            Toast.makeText(getBaseContext(), "Image saved",
+                                                    Toast.LENGTH_SHORT).show();
+                                        } catch (Exception e) {
+                                            Toast.makeText(getBaseContext(), "Image save failed",
+                                                    Toast.LENGTH_SHORT).show();
+
+                                            e.printStackTrace();
+                                        }
+                                    } catch (Exception e) {
+                                        Toast.makeText(getBaseContext(), "Image save failed",
+                                                Toast.LENGTH_SHORT).show();
+
+                                        e.printStackTrace();
+                                    }
+                                    ;
+                                }
+                            });
+                            builder.setNeutralButton("Internal", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    final String tweet = ((TextView) view.findViewById(R.id.title)).getText().toString();
+                                    URL url;
+                                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                                    try {
+                                        url = new URL(results.get(position).get(KEY_THUMB_URL));
+                                        final Bitmap bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                                        bmp.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                    ContextWrapper cw = new ContextWrapper(getApplicationContext());
+                                    // path to /data/data/yourapp/app_data/imageDir
+                                    File directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
+                                    // Create imageDir
+                                    File mypath = new File(directory, "mention_" + System.currentTimeMillis() + ".jpg");
+
+                                    FileOutputStream fos = null;
+                                    try {
+
+                                        fos = new FileOutputStream(mypath);
+                                        fos.write(bytes.toByteArray());
+                                        fos.close();
+                                        Toast.makeText(getBaseContext(), "Image saved",
+                                                Toast.LENGTH_SHORT).show();
+                                    } catch (Exception e) {
+                                        Toast.makeText(getBaseContext(), "Image save failed",
+                                                Toast.LENGTH_SHORT).show();
+                                        e.printStackTrace();
+                                    }
+                                 }
+                            });
+                            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+                                    // User cancelled the dialog
+                                    dialog.cancel();
+                                }
+                            });
+
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
                         }
                     });
-
-
-//                    final StableArrayAdapter adapter = new StableArrayAdapter(this,
-//                            android.R.layout.simple_list_item_1, results);
-//                    resultsList.setAdapter(adapter);
-//
-//                    resultsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//
-//                        @Override
-//                        public void onItemClick(AdapterView<?> parent, final View view,
-//                                                int position, long id) {
-//                        }
-//                    });
                 }
                 else {
                     Toast.makeText(getApplicationContext(),
@@ -335,7 +412,10 @@ public class SearchActivity extends Activity {
         btnSearch.setVisibility(View.GONE);
         inpSearch.setVisibility(View.GONE);
         lblIntro.setVisibility(View.GONE);
+        resultsList.setVisibility(View.GONE);
         btnLoginTwitter.setVisibility(View.VISIBLE);
+
+
     }
 
     @Override
