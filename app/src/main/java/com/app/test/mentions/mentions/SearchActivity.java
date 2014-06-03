@@ -14,6 +14,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.os.StrictMode;
 import android.text.Html;
 import android.util.Log;
@@ -262,14 +263,14 @@ public class SearchActivity extends Activity {
                         .setOAuthAccessTokenSecret(TWITTER_ACCESS_SECRET);
 
                 TwitterFactory factory = new TwitterFactory(cb.build());
-                Twitter t = factory.getInstance();
+                final Twitter t = factory.getInstance();
                 if(!searchTerm.startsWith("@")) {
                     searchTerm = "@" + searchTerm;
                 }
-                Query query = new Query(searchTerm);
+                final Query query = new Query(searchTerm);
                 final QueryResult result = t.search(query);
-               // final ArrayList results = new ArrayList();
                 final ArrayList<HashMap<String, String>> results = new ArrayList<HashMap<String, String>>();
+                final ArrayList<String> ids_texts = new ArrayList<String>();
 
                 for (Status status : result.getTweets()) {
                     HashMap<String, String> map = new HashMap<String, String>();
@@ -279,12 +280,53 @@ public class SearchActivity extends Activity {
                     else
                         map.put(KEY_THUMB_URL,"");
                     results.add(map);
-                   // results.add("@" + status.getUser().getScreenName() + ":" + status.getText()+"\n");
-                }
+                    ids_texts.add(status.getText());
+                 }
                 resultsList.setVisibility(View.VISIBLE);
                 if(results.size()>0) {
                     adapter=new LazyAdapter(this, results);
                     resultsList.setAdapter(adapter);
+                    final Handler handler = new Handler();
+                    handler.postDelayed( new Runnable() {
+                        @Override
+                        public void run() {
+                           //update results list
+                            QueryResult result_update;
+                            try {
+                                result_update = t.search(query);
+                            } catch (TwitterException e) {
+                                result_update = null;
+                                e.printStackTrace();
+                            }
+
+                            Integer countNewTweets = 0;
+                            for (Status status : result_update.getTweets()) {
+                                //only add new tweets
+                               if (!ids_texts.contains(status.getText())) {
+                                   HashMap<String, String> map = new HashMap<String, String>();
+                                   map.put(KEY_TWEET, "@" + status.getUser().getScreenName() + ":" + status.getText());
+                                   if (status.getMediaEntities().length > 0)
+                                       map.put(KEY_THUMB_URL, status.getMediaEntities()[0].getMediaURL());
+                                   else
+                                       map.put(KEY_THUMB_URL, "");
+                                   results.add(countNewTweets, map);
+                                   countNewTweets++;
+                               }
+                            }
+                            if(countNewTweets > 0) {
+                                Toast.makeText(getBaseContext(), countNewTweets + " new tweets",
+                                        Toast.LENGTH_LONG).show(); }
+
+                            int index = resultsList.getFirstVisiblePosition();
+                            View v = resultsList.getChildAt(0);
+                            int top = (v == null) ? 0 : v.getTop();
+
+                            adapter=new LazyAdapter(SearchActivity.this, results);
+                            resultsList.setAdapter(adapter);
+                            resultsList.setSelectionFromTop(index, top);
+                            handler.postDelayed( this, 60 * 1000 );
+                        }
+                    }, 60 * 1000 );
 
 
                     // Click event for single list row

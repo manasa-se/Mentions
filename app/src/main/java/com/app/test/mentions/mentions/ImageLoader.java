@@ -54,31 +54,34 @@ public class ImageLoader {
     
     public Bitmap getBitmap(String url)
     {
-        File f=fileCache.getFile(url);
-        
-        //from SD cache
-        Bitmap b = decodeFile(f);
-        if(b!=null)
-            return b;
-        
-        //from web
-        try {
-            Bitmap bitmap=null;
-            URL imageUrl = new URL(url);
-            HttpURLConnection conn = (HttpURLConnection)imageUrl.openConnection();
-            conn.setConnectTimeout(30000);
-            conn.setReadTimeout(30000);
-            conn.setInstanceFollowRedirects(true);
-            InputStream is=conn.getInputStream();
-            OutputStream os = new FileOutputStream(f);
-            Utils.CopyStream(is, os);
-            os.close();
-            bitmap = decodeFile(f);
-            return bitmap;
-        } catch (Exception ex){
-           ex.printStackTrace();
-           return null;
+        if (url.length() > 0) {
+            File f = fileCache.getFile(url);
+
+            //from SD cache
+            Bitmap b = decodeFile(f);
+            if (b != null)
+                return b;
+
+            //from web
+            try {
+                Bitmap bitmap = null;
+                URL imageUrl = new URL(url);
+                HttpURLConnection conn = (HttpURLConnection) imageUrl.openConnection();
+                conn.setConnectTimeout(30000);
+                conn.setReadTimeout(30000);
+                conn.setInstanceFollowRedirects(true);
+                InputStream is = conn.getInputStream();
+                OutputStream os = new FileOutputStream(f);
+                Utils.CopyStream(is, os);
+                os.close();
+                bitmap = decodeFile(f);
+                return bitmap;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                return null;
+            }
         }
+        return null;
     }
 
     //decodes image and scales it to reduce memory consumption
