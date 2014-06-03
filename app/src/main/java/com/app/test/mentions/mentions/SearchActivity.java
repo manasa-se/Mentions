@@ -93,6 +93,9 @@ public class SearchActivity extends Activity {
     // Alert Dialog Manager
     AlertDialogManager alert = new AlertDialogManager();
 
+    Handler handler;
+    Runnable runnable;
+
     static final String KEY_TWEET = "tweet";
     static final String KEY_THUMB_URL = "thumb";
     LazyAdapter adapter;
@@ -286,8 +289,8 @@ public class SearchActivity extends Activity {
                 if(results.size()>0) {
                     adapter=new LazyAdapter(this, results);
                     resultsList.setAdapter(adapter);
-                    final Handler handler = new Handler();
-                    handler.postDelayed( new Runnable() {
+                    handler = new Handler();
+                    handler.postDelayed( runnable = new Runnable() {
                         @Override
                         public void run() {
                            //update results list
@@ -444,6 +447,8 @@ public class SearchActivity extends Activity {
         e.remove(PREF_KEY_TWITTER_LOGIN);
         e.remove(USERNAME);
         e.commit();
+
+        handler.removeCallbacks(runnable);
 
         // After this take the appropriate action
         // I am showing the hiding/showing buttons again
